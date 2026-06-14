@@ -17,8 +17,25 @@ exports.getReviews = async (req, res) => {
   }
 };
 
+exports.getLivingScore = async (req, res) => {
+  try {
+    const score = await pool.query(
+      'SELECT * FROM property_living_scores WHERE property_id = $1',
+      [req.params.propertyId]
+    );
+    if (score.rows.length > 0) {
+      res.json(score.rows[0]);
+    } else {
+      res.json(null);
+    }
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 exports.addReview = async (req, res) => {
-  const { booking_id, rating, comment } = req.body;
+  const { booking_id, rating_food, rating_wifi, rating_safety, rating_study_env, rating_water, rating_cleanliness, comment } = req.body;
   const user_id = req.user.id;
 
   try {
@@ -37,8 +54,8 @@ exports.addReview = async (req, res) => {
     }
 
     const newReview = await pool.query(
-      'INSERT INTO reviews (booking_id, user_id, rating, comment) VALUES ($1, $2, $3, $4) RETURNING *',
-      [booking_id, user_id, rating, comment]
+      'INSERT INTO reviews (booking_id, user_id, rating_food, rating_wifi, rating_safety, rating_study_env, rating_water, rating_cleanliness, comment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      [booking_id, user_id, rating_food, rating_wifi, rating_safety, rating_study_env, rating_water, rating_cleanliness, comment]
     );
 
     res.status(201).json(newReview.rows[0]);

@@ -60,7 +60,7 @@ const BookingPage = () => {
                        value={dates.end_date} onChange={e => setDates({...dates, end_date: e.target.value})} />
               </div>
               <div className="alert alert-info">
-                Total Price: <strong>${property.price}</strong> (Fixed prototype price)
+                Total Price: <strong>₹{property.price}</strong> (Fixed prototype price)
               </div>
               <button type="submit" className="btn btn-primary w-100">Confirm Dates & Proceed</button>
             </form>

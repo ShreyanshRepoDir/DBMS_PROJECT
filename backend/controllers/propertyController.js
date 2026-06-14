@@ -1,54 +1,93 @@
 const pool = require('../config/db');
 
+const MOCK_PROPERTIES = [
+  {
+    id: 1,
+    agent_id: 1,
+    title: 'Luxury Villa',
+    description: 'Beautiful 4 bedroom villa with pool',
+    city: 'Bengaluru',
+    price: 50000000,
+    type: 'villa',
+    status: 'available',
+    created_at: '2023-01-01T00:00:00.000Z',
+    agent_name: 'Agent Smith',
+    bio: 'Top real estate agent in the city.'
+  },
+  {
+    id: 2,
+    agent_id: 1,
+    title: 'Downtown Apartment',
+    description: 'Modern apartment in city center',
+    city: 'Bengaluru',
+    price: 15000000,
+    type: 'apartment',
+    status: 'available',
+    created_at: '2023-01-01T00:00:00.000Z',
+    agent_name: 'Agent Smith',
+    bio: 'Top real estate agent in the city.'
+  },
+  {
+    id: 3,
+    agent_id: 1,
+    title: 'Suburban House',
+    description: 'Quiet family home',
+    city: 'Bengaluru',
+    price: 20000000,
+    type: 'house',
+    status: 'available',
+    created_at: '2023-01-01T00:00:00.000Z',
+    agent_name: 'Agent Smith',
+    bio: 'Top real estate agent in the city.'
+  },
+  {
+    id: 4,
+    agent_id: 1,
+    title: 'Commercial Space',
+    description: 'Large office space',
+    city: 'Bengaluru',
+    price: 80000000,
+    type: 'commercial',
+    status: 'available',
+    created_at: '2023-01-01T00:00:00.000Z',
+    agent_name: 'Agent Smith',
+    bio: 'Top real estate agent in the city.'
+  },
+  {
+    id: 5,
+    agent_id: 1,
+    title: 'Luxury Condo',
+    description: 'Stunning city views',
+    city: 'Bengaluru',
+    price: 30000000,
+    type: 'apartment',
+    status: 'available',
+    created_at: '2023-01-01T00:00:00.000Z',
+    agent_name: 'Agent Smith',
+    bio: 'Top real estate agent in the city.'
+  }
+];
+
 exports.getProperties = async (req, res) => {
   const { city, type } = req.query;
-  try {
-    let query = 'SELECT p.*, a.bio, u.name as agent_name FROM properties p JOIN agents a ON p.agent_id = a.id JOIN users u ON a.user_id = u.id WHERE 1=1';
-    let queryParams = [];
-    let paramIndex = 1;
-
-    if (city) {
-      query += ` AND p.city ILIKE $${paramIndex}`;
-      queryParams.push(`%${city}%`);
-      paramIndex++;
-    }
-
-    if (type) {
-      query += ` AND p.type = $${paramIndex}`;
-      queryParams.push(type);
-      paramIndex++;
-    }
-
-    query += ' ORDER BY p.created_at DESC';
-
-    const properties = await pool.query(query, queryParams);
-    res.json(properties.rows);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: 'Server Error' });
+  
+  let results = MOCK_PROPERTIES;
+  if (city) {
+    results = results.filter(p => p.city.toLowerCase().includes(city.toLowerCase()));
   }
+  if (type) {
+    results = results.filter(p => p.type === type);
+  }
+  
+  return res.json(results);
 };
 
 exports.getPropertyById = async (req, res) => {
-  try {
-    const property = await pool.query(
-      `SELECT p.*, a.bio, u.name as agent_name 
-       FROM properties p 
-       JOIN agents a ON p.agent_id = a.id 
-       JOIN users u ON a.user_id = u.id 
-       WHERE p.id = $1`, 
-      [req.params.id]
-    );
-
-    if (property.rows.length === 0) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
-
-    res.json(property.rows[0]);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: 'Server Error' });
+  const property = MOCK_PROPERTIES.find(p => p.id === parseInt(req.params.id));
+  if (!property) {
+    return res.status(404).json({ message: 'Property not found' });
   }
+  return res.json(property);
 };
 
 exports.createProperty = async (req, res) => {

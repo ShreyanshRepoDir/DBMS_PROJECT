@@ -97,7 +97,7 @@ const PropertyDetails = () => {
       <div className="col-md-4">
         <div className="card shadow-sm sticky-top" style={{ top: '20px' }}>
           <div className="card-body text-center">
-            <h3 className="text-success mb-4">${property.price}</h3>
+            <h3 className="text-success mb-4">₹{property.price}</h3>
             {property.status === 'available' ? (
               <Link to={`/book/${property.id}`} className="btn btn-primary btn-lg w-100 mb-2">Book Now</Link>
             ) : (

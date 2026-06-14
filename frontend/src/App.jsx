@@ -20,6 +20,8 @@ import PaymentPage from './pages/PaymentPage';
 import Favorites from './pages/Favorites';
 import AgentDashboard from './pages/AgentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Marketplace from './pages/Marketplace';
+import MyBookings from './pages/MyBookings';
 
 function App() {
   return (
@@ -33,12 +35,14 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/properties" element={<PropertyList />} />
             <Route path="/properties/:id" element={<PropertyDetails />} />
+            <Route path="/marketplace" element={<Marketplace />} />
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute allowedRoles={['customer', 'agent', 'admin']} />}>
               <Route path="/book/:id" element={<BookingPage />} />
               <Route path="/payment/:bookingId" element={<PaymentPage />} />
               <Route path="/favorites" element={<Favorites />} />
+              <Route path="/my-bookings" element={<MyBookings />} />
             </Route>
 
             {/* Agent Routes */}

@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 
 const AgentDashboard = () => {
   const [properties, setProperties] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProperties = async () => {
@@ -13,13 +14,26 @@ const AgentDashboard = () => {
       setProperties(res.data);
     } catch(e) {
       toast.error("Failed to load properties");
-    } finally {
-      setLoading(false);
     }
   };
 
+  const fetchPendingRequests = async () => {
+    try {
+      const res = await api.get('/transfers/requests/pending');
+      setPendingRequests(res.data);
+    } catch (e) {
+      toast.error("Failed to load transfer requests");
+    }
+  };
+
+  const loadDashboard = async () => {
+    setLoading(true);
+    await Promise.all([fetchProperties(), fetchPendingRequests()]);
+    setLoading(false);
+  };
+
   useEffect(() => {
-      fetchProperties();
+      loadDashboard();
   }, []);
 
   const handleDelete = async (id) => {
@@ -32,7 +46,19 @@ const AgentDashboard = () => {
         toast.error("Failed to delete property");
       }
     }
-  }
+  };
+
+  const handleApproveTransfer = async (requestId) => {
+    if(window.confirm('Are you sure you want to approve this transfer request? The booking will be reassigned.')) {
+      try {
+        await api.post('/transfers/approve', { request_id: requestId });
+        toast.success("Transfer approved successfully!");
+        fetchPendingRequests(); // refresh requests list
+      } catch(e) {
+        toast.error(e.response?.data?.message || "Failed to approve transfer");
+      }
+    }
+  };
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border"></div></div>;
 
@@ -69,7 +95,7 @@ const AgentDashboard = () => {
                     <tr key={property.id}>
                       <td>{property.title}</td>
                       <td>{property.city}</td>
-                      <td>${property.price}</td>
+                      <td>₹{property.price}</td>
                       <td>
                         <span className={`badge ${property.status === 'available' ? 'bg-success' : 'bg-secondary'}`}>
                           {property.status}
@@ -78,6 +104,49 @@ const AgentDashboard = () => {
                       <td>
                         <Link to={`/agent/edit-property/${property.id}`} className="btn btn-sm btn-outline-primary me-2">Edit</Link>
                         <button onClick={() => handleDelete(property.id)} className="btn btn-sm btn-outline-danger">Delete</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div className="card shadow-sm mt-5 border-warning">
+        <div className="card-header bg-warning text-dark">
+          <h5 className="mb-0">Pending Room Transfer Requests</h5>
+        </div>
+        <div className="card-body p-0">
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th>Property</th>
+                  <th>Current Tenant</th>
+                  <th>Requested By</th>
+                  <th>Reason</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="text-center py-3">No pending requests.</td>
+                  </tr>
+                ) : (
+                  pendingRequests.map(req => (
+                    <tr key={req.id}>
+                      <td>{req.property_title}</td>
+                      <td>{req.original_tenant}</td>
+                      <td>
+                        {req.requester_name} <br/>
+                        <small className="text-muted">{req.requester_email}</small>
+                      </td>
+                      <td>{req.transfer_reason}</td>
+                      <td>
+                        <button onClick={() => handleApproveTransfer(req.id)} className="btn btn-sm btn-success">Approve Transfer</button>
                       </td>
                     </tr>
                   ))

@@ -1,6 +1,10 @@
 -- schema.sql
 
 -- Drop existing tables
+DROP VIEW IF EXISTS property_living_scores CASCADE;
+DROP TABLE IF EXISTS transfer_approvals CASCADE;
+DROP TABLE IF EXISTS transfer_requests CASCADE;
+DROP TABLE IF EXISTS room_transfers CASCADE;
 DROP TABLE IF EXISTS favorites CASCADE;
 DROP TABLE IF EXISTS reviews CASCADE;
 DROP TABLE IF EXISTS payments CASCADE;
@@ -61,15 +65,61 @@ CREATE TABLE reviews (
     id SERIAL PRIMARY KEY,
     booking_id INT UNIQUE NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    rating_food INT NOT NULL CHECK (rating_food BETWEEN 1 AND 10),
+    rating_wifi INT NOT NULL CHECK (rating_wifi BETWEEN 1 AND 10),
+    rating_safety INT NOT NULL CHECK (rating_safety BETWEEN 1 AND 10),
+    rating_study_env INT NOT NULL CHECK (rating_study_env BETWEEN 1 AND 10),
+    rating_water INT NOT NULL CHECK (rating_water BETWEEN 1 AND 10),
+    rating_cleanliness INT NOT NULL CHECK (rating_cleanliness BETWEEN 1 AND 10),
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE OR REPLACE VIEW property_living_scores AS
+SELECT 
+    b.property_id,
+    ROUND(AVG(
+        (r.rating_food + r.rating_wifi + r.rating_safety + r.rating_study_env + r.rating_water + r.rating_cleanliness) / 6.0
+    ), 2) AS living_score,
+    ROUND(AVG(r.rating_food), 1) as avg_food,
+    ROUND(AVG(r.rating_wifi), 1) as avg_wifi,
+    ROUND(AVG(r.rating_safety), 1) as avg_safety,
+    ROUND(AVG(r.rating_study_env), 1) as avg_study_env,
+    ROUND(AVG(r.rating_water), 1) as avg_water,
+    ROUND(AVG(r.rating_cleanliness), 1) as avg_cleanliness,
+    COUNT(r.id) as total_reviews
+FROM reviews r
+JOIN bookings b ON r.booking_id = b.id
+GROUP BY b.property_id;
 
 CREATE TABLE favorites (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     property_id INT NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, property_id)
+);
+
+CREATE TABLE room_transfers (
+    id SERIAL PRIMARY KEY,
+    booking_id INT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    reason TEXT,
+    status VARCHAR(50) DEFAULT 'open' CHECK (status IN ('open', 'matched', 'completed', 'cancelled')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE transfer_requests (
+    id SERIAL PRIMARY KEY,
+    transfer_id INT NOT NULL REFERENCES room_transfers(id) ON DELETE CASCADE,
+    requester_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE transfer_approvals (
+    id SERIAL PRIMARY KEY,
+    request_id INT UNIQUE NOT NULL REFERENCES transfer_requests(id) ON DELETE CASCADE,
+    approved_by INT NOT NULL REFERENCES users(id),
+    status VARCHAR(50) DEFAULT 'approved' CHECK (status IN ('approved', 'rejected')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indexes
@@ -169,28 +219,29 @@ $$ LANGUAGE plpgsql;
 INSERT INTO users (name, email, password, role) VALUES
 ('Admin User', 'admin@test.com', '$2b$10$WwO03164GfMWe.hWJ7pQJ.G8oM9w3h2Q.Y6t2iU/r7F580w6x0sO2', 'admin'),
 ('Agent Smith', 'agent@test.com', '$2b$10$WwO03164GfMWe.hWJ7pQJ.G8oM9w3h2Q.Y6t2iU/r7F580w6x0sO2', 'agent'),
-('John Doe', 'customer@test.com', '$2b$10$WwO03164GfMWe.hWJ7pQJ.G8oM9w3h2Q.Y6t2iU/r7F580w6x0sO2', 'customer');
+('John Doe', 'customer@test.com', '$2b$10$WwO03164GfMWe.hWJ7pQJ.G8oM9w3h2Q.Y6t2iU/r7F580w6x0sO2', 'customer'),
+('Jane Student', 'student2@test.com', '$2b$10$WwO03164GfMWe.hWJ7pQJ.G8oM9w3h2Q.Y6t2iU/r7F580w6x0sO2', 'customer');
 
 INSERT INTO agents (user_id, bio, rating) VALUES
 (2, 'Top real estate agent in the city.', 4.8);
 
 INSERT INTO properties (agent_id, title, description, city, price, type, status) VALUES
-(1, 'Luxury Villa', 'Beautiful 4 bedroom villa with pool', 'Miami', 500000, 'villa', 'available'),
-(1, 'Downtown Apartment', 'Modern apartment in city center', 'New York', 250000, 'apartment', 'available'),
-(1, 'Suburban House', 'Quiet family home', 'Chicago', 300000, 'house', 'available'),
-(1, 'Commercial Space', 'Large office space', 'San Francisco', 800000, 'commercial', 'available'),
-(1, 'Beachfront Condo', 'Stunning ocean views', 'Miami', 450000, 'apartment', 'available');
+(1, 'Student PG A', 'Premium PG with fast wifi and 3 meals', 'Bengaluru', 15000, 'apartment', 'available'),
+(1, 'Student Hostel B', 'Affordable shared rooms near campus', 'Bengaluru', 8000, 'apartment', 'available'),
+(1, 'Private Studio C', 'Quiet studio for serious students', 'Bengaluru', 20000, 'house', 'available'),
+(1, 'Co-living Space D', 'Modern co-living with great study env', 'Bengaluru', 18000, 'apartment', 'available'),
+(1, 'Shared Villa E', 'Luxury student living with pool', 'Bengaluru', 25000, 'villa', 'available');
 
 -- Some initial completed bookings to allow reviews
 INSERT INTO bookings (user_id, property_id, start_date, end_date, status) VALUES
 (3, 1, '2023-01-01', '2023-01-10', 'completed'),
 (3, 2, '2023-02-01', '2023-02-05', 'completed'),
-(3, 3, '2026-12-01', '2026-12-10', 'pending');
+(3, 3, '2026-12-01', '2026-12-10', 'confirmed');
 
 INSERT INTO payments (booking_id, amount, method) VALUES
-(1, 500000, 'credit_card'),
-(2, 250000, 'paypal');
+(1, 15000, 'credit_card'),
+(2, 8000, 'paypal');
 
-INSERT INTO reviews (booking_id, user_id, rating, comment) VALUES
-(1, 3, 5, 'Absolutely amazing place!'),
-(2, 3, 4, 'Great location, slightly noisy.');
+INSERT INTO reviews (booking_id, user_id, rating_food, rating_wifi, rating_safety, rating_study_env, rating_water, rating_cleanliness, comment) VALUES
+(1, 3, 8, 9, 10, 8, 9, 9, 'Absolutely amazing place for students!'),
+(2, 3, 6, 7, 8, 6, 7, 6, 'Great location, slightly noisy for studying.');

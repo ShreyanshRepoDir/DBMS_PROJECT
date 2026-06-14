@@ -26,6 +26,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/transfers', require('./routes/transferRoutes'));
 
 // Centralized error handler
 app.use(errorHandler);

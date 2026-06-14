@@ -10,7 +10,7 @@ const PropertyCard = ({ property }) => {
           <h6 className="card-subtitle mb-2 text-muted">{property.city} - {property.type}</h6>
           <p className="card-text text-truncate">{property.description}</p>
           <div className="d-flex justify-content-between align-items-center mt-3">
-            <span className="h5 mb-0 text-success">${property.price}</span>
+            <span className="h5 mb-0 text-success">₹{property.price}</span>
             <span className={`badge ${property.status === 'available' ? 'bg-success' : 'bg-danger'}`}>
               {property.status}
             </span>

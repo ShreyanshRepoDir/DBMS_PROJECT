@@ -23,10 +23,18 @@ const Navbar = () => {
             <li className="nav-item">
               <Link className="nav-link" to="/properties">Properties</Link>
             </li>
+            <li className="nav-item">
+              <Link className="nav-link text-warning" to="/marketplace">Transfer Market</Link>
+            </li>
             {user && (
-              <li className="nav-item">
-                <Link className="nav-link" to="/favorites">Favorites</Link>
-              </li>
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/favorites">Favorites</Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/my-bookings">My Bookings</Link>
+                </li>
+              </>
             )}
             {user?.role === 'agent' && (
               <li className="nav-item">

@@ -55,7 +55,7 @@ const AdminDashboard = () => {
           <div className="card text-white bg-success mb-3">
             <div className="card-header">Total Revenue</div>
             <div className="card-body">
-              <h4 className="card-title">${stats.totalRevenue}</h4>
+              <h4 className="card-title">₹{stats.totalRevenue}</h4>
             </div>
           </div>
         </div>
